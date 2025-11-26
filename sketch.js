@@ -13,6 +13,14 @@ let colorIndex = 0; // index for cycling through colors
 let thicknessPalette = [1, 7, 13, 20]; // thickness options
 let thicknessIndex = 0; // index for cycling through thicknesses
 
+// adding sound input vars:
+let mic;
+let fft;
+let vol = 0;
+let smoothedVol = 0;
+let smoothedFreq = 0;
+
+
 // PoseNet global variables
 let video;
 let poseNet; 
@@ -47,6 +55,14 @@ function setup() {
 
   poseNet.on("pose", gotPoses); // pose callback
 
+
+  // set up mic input:
+  mic = new p5.AudioIn();
+  mic.start();
+
+  fft = new p5.FFT();
+  fft.setInput(mic);
+
   // UI
   // speed slider
   createP('Speed').position(55, height + 8).style('font-family', 'sans-serif');
@@ -61,6 +77,18 @@ function setup() {
 
 function draw() {
   background(255, 255, 255); 
+
+  // finding amplitude and freq
+  // question - what do we want these to correspond to? size and y pos still?
+  // maybe size for vol and then hue for freq (within this current color palette...)
+  vol = mic.getLevel();
+  smoothedVol = lerp(smoothedVol, vol, 0.18); // using lerp function to smooth changes in volume 
+
+  let spectrum = fft.analyze();
+  let nyquist = sampleRate() / 2; 
+  let idx = spectrum.indexOf(max(spectrum));
+  let freq = idx * (nyquist / spectrum.length);
+  smoothedFreq = lerp(smoothedFreq, freq, 0.12); // here, also smoothing the changes in frequency 
 
   // draw stored lines
   strokeCap(ROUND); // rounded line endings
